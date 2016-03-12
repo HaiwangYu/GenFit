@@ -12,5 +12,6 @@
 #endif
 
 #pragma link C++ class genfit::RKTrackRep-;
+#pragma link C++ class genfit::G4eTrackRep-;
 
 #endif
