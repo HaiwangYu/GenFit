@@ -30,6 +30,13 @@ INCLUDE(macros)
 
 FIND_PACKAGE(ROOT REQUIRED COMPONENTS Geom)
 
+# ================== Geant4 ========================
+EXECUTE_PROCESS( COMMAND "/home/yuhw/Program/Geant4/geant4.10.01.p02-install/bin/geant4-config" --libs
+    OUTPUT_VARIABLE G4_LIBS
+    RESULT_VARIABLE _exit_code
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)   
+
 # either, the environment variable RAVEPATH has to be specified, and RAVE's pkgConfig will be used to determine everything we need
 # or, RAVE_LDFLAGS, RAVE_INCLUDE_DIRS and RAVE_CFLAGS have to be set via the command-line
 
@@ -138,6 +145,7 @@ SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS} -O3 -g3")
 INCLUDE_DIRECTORIES( 
 	BEFORE 
 	${GF_INC_DIRS}
+	$ENV{G4INSTALL}/include/Geant4/
 	${ROOT_INCLUDE_DIRS})
 
 
@@ -157,7 +165,7 @@ ENDIF(DOXYGEN_FOUND)
 
 
 # declare the ROOT library path
-LINK_DIRECTORIES(${ROOT_LIBRARY_DIR})
+LINK_DIRECTORIES(${ROOT_LIBRARY_DIR} $ENV{G4INSTALL}/lib/)
 
 
 # add the list of source code files -- careful, when a new file is added!
@@ -300,6 +308,7 @@ SET(library_sources "${CMAKE_CURRENT_BINARY_DIR}/measurementsRootDict.cc" "${lib
 
 SET(TRACKREPS_DICTIONARY_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/trackReps/include/RKTrackRep.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/trackReps/include/G4eTrackRep.h
 )
 ROOT_GENERATE_DICTIONARY("${CMAKE_SHARED_LIBRARY_PREFIX}${PROJECT_NAME}"
                          "${TRACKREPS_DICTIONARY_SOURCES}"
@@ -346,11 +355,12 @@ if(DEFINED RAVE)
 	TARGET_LINK_LIBRARIES(
 		${PROJECT_NAME}
 		${ROOT_LIBS}  
+		${G4_LIBS}
   		${RAVE_LDFLAGS_STR}
   		-I${RAVE_INCLUDE_DIRS_I}
   	)
 else()
-	TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${ROOT_LIBS})
+	TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${ROOT_LIBS} ${G4_LIBS})
 endif()
 
 
@@ -366,6 +376,8 @@ ENDMACRO( ADD_GENFIT_TEST )
 ADD_GENFIT_TEST( fitterTests               test/fitterTests/main.cc)
 ADD_GENFIT_TEST( minimalFittingExample     test/minimalFittingExample/main.cc)
 ADD_GENFIT_TEST( minimalFittingExample2     test/minimalFittingExample/main2.cc)
+ADD_GENFIT_TEST( minimalFittingExampleG4eTrackRep     test/minimalFittingExample/main3.cc)
+ADD_GENFIT_TEST( testRKTrackRep     test/minimalFittingExample/main4.cc)
 ADD_GENFIT_TEST( measurementFactoryExample test/measurementFactoryExample/main.cc)
 ADD_GENFIT_TEST( streamerTest              test/streamerTest/main.cc)
 ADD_GENFIT_TEST( unitTests                 test/unitTests/main.cc)

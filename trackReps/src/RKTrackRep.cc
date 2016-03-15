@@ -113,7 +113,6 @@ double RKTrackRep::extrapolateToPlane(StateOnPlane& state,
   bool isAtBoundary(false);
   double flightTime( 0. );
   double coveredDistance( Extrap(*(state.getPlane()), *plane, getCharge(state), getMass(state), isAtBoundary, state7, flightTime, fillExtrapSteps, covPtr, false, stopAtBoundary) );
-
   if (stopAtBoundary && isAtBoundary) {
     state.setPlane(SharedPlanePtr(new DetPlane(TVector3(state7[0], state7[1], state7[2]),
                                                 TVector3(state7[3], state7[4], state7[5]))));

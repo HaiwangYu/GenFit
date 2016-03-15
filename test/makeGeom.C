@@ -1,3 +1,6 @@
+#include <cassert>
+#include <cstddef>
+
 void makeGeom()
 {
   //--- Definition of a simple geometry

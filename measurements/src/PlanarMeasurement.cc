@@ -66,10 +66,10 @@ std::vector<MeasurementOnPlane*> PlanarMeasurement::constructMeasurementsOnPlane
 
 const AbsHMatrix* PlanarMeasurement::constructHMatrix(const AbsTrackRep* rep) const {
 
-  if (dynamic_cast<const RKTrackRep*>(rep) == NULL) {
-    Exception exc("SpacepointMeasurement default implementation can only handle state vectors of type RKTrackRep!", __LINE__,__FILE__);
-    throw exc;
-  }
+//  if (dynamic_cast<const RKTrackRep*>(rep) == NULL) {
+//    Exception exc("SpacepointMeasurement default implementation can only handle state vectors of type RKTrackRep!", __LINE__,__FILE__);
+//    throw exc;
+//  }
 
   switch(rawHitCoords_.GetNrows()) {
   case 1:
