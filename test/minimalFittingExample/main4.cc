@@ -34,7 +34,13 @@
 
 #define LogDEBUG    std::cout<<"DEBUG: "<<__LINE__<<"\n"
 
-int main() {
+int main(int argc, char **argv) {
+
+	double magnetic_field = atof(argv[1]); //kGauss
+	double momentum_z = atof(argv[2]); // GeV
+	double init_z = atof(argv[3]); //cm
+	double dest_z = atof(argv[4]); //cm
+	std::cout << magnetic_field << "\n";
 
 	gRandom->SetSeed(14);
 
@@ -45,7 +51,7 @@ int main() {
 	new TGeoManager("Geometry", "Geane geometry");
 	TGeoManager::Import("genfitGeom.root");
 	genfit::FieldManager::getInstance()->init(
-			new genfit::ConstField(40., 0., 0.)); // kGauss
+			new genfit::ConstField(magnetic_field, 0., 0.)); // kGauss
 	genfit::MaterialEffects::getInstance()->init(
 			new genfit::TGeoMaterialInterface());
 
@@ -59,14 +65,14 @@ int main() {
 	for (unsigned int iEvent = 0; iEvent < 100; ++iEvent) {
 
 		// true start values
-		TVector3 pos(0, 0, 0); //cm
-		TVector3 mom(0, 0, 1); //GeV
+		TVector3 pos(0, 0, init_z); //cm
+		TVector3 mom(0, 0, momentum_z); //GeV
 //    mom.SetPhi(gRandom->Uniform(0.,2*TMath::Pi()));
 //    mom.SetTheta(gRandom->Uniform(0.4*TMath::Pi(),0.6*TMath::Pi()));
 //    mom.SetMag(gRandom->Uniform(0.2, 1.));
 
 		// helix track model
-		const int pdg = -13;               // particle pdg code
+		const int pdg = -13; //-13: mu+, 13: mu-
 //		const double charge = TDatabasePDG::Instance()->GetParticle(pdg)->Charge() / (3.);
 //    genfit::HelixTrackModel* helix = new genfit::HelixTrackModel(pos, mom, charge);
 //    measurementCreator.setTrackModel(helix);
@@ -91,15 +97,23 @@ int main() {
 			momM.SetTheta(gRandom->Gaus(mom.Theta(), momSmear));
 			momM.SetMag(gRandom->Gaus(mom.Mag(), momMagSmear * mom.Mag()));
 		}
+
 		// approximate covariance
 		TMatrixDSym covM(6);
-		//double resolution = 0.01;//original
 		double resolution = 0.1;   //original
 		measurementCreator.setResolution(resolution);
-		for (int i = 0; i < 6; ++i)
+
+		for (int i = 0; i < 3; ++i)
 			covM(i, i) = resolution * resolution;
-//		for (int i = 3; i < 6; ++i)
-//			covM(i, i) = pow(resolution / nMeasurements / sqrt(3), 2);
+		for (int i = 3; i < 6; ++i)
+			covM(i, i) = pow(resolution / nMeasurements / sqrt(3), 2);
+
+		covM(0, 0) = 0;
+		covM(1, 1) = 0;
+		covM(2, 2) = 0;
+		covM(3, 3) = 0;
+		covM(4, 4) = 0;
+		covM(5, 5) = 0;
 
 		// trackrep
 		genfit::AbsTrackRep* rep = new genfit::RKTrackRep(pdg);
@@ -114,22 +128,20 @@ int main() {
 		stateSmeared.get6DStateCov(seedState, seedCov);
 		genfit::Track fitTrack(rep, seedState, seedCov);
 
-		// create random measurement types
-//		std::vector<genfit::eMeasurementType> measurementTypes;
-//		for (unsigned int i = 0; i < nMeasurements; ++i)
-//			measurementTypes.push_back(genfit::eMeasurementType(3));
-		//measurementTypes.push_back(genfit::eMeasurementType(gRandom->Uniform(8)));
-
 		genfit::MeasuredStateOnPlane currentState = stateSmeared;
 
 		genfit::SharedPlanePtr detPlane = boost::make_shared<genfit::DetPlane>(
-				TVector3(0, 0, 25), TVector3(0, 0, 1));
-		//detPlane->Print();
+				TVector3(0, 0, dest_z), TVector3(0, 0, 1));
 		//rep->setDebugLvl(10);
 
-		//currentState.Print();
-		//rep->extrapolateToPlane(currentState, detPlane);
-		//currentState.Print();
+		std::cout << "============= State at z = " << init_z
+				<< ": =============\n";
+		currentState.Print();
+		rep->extrapolateToPlane(currentState, detPlane);
+		std::cout << "============= State at z = " << dest_z
+				<< ": =============\n";
+		currentState.Print();
+		continue;
 
 		int measurementCounter_ = 0;
 		// create smeared measurements and add to track
@@ -140,33 +152,33 @@ int main() {
 						new genfit::DetPlane(TVector3(0, 0, i * 20),
 								TVector3(0, 0, 1)));
 
-
 				genfit::MeasuredStateOnPlane tempState = stateSmeared;
 				rep->extrapolateToPlane(tempState, plane);
 				TVectorD tempPosMom(6);
 				TMatrixDSym tempPosMomCov(6);
 				tempState.get6DStateCov(tempPosMom, tempPosMomCov);
 
-				std::cout<<"DEBUG: "<<" pos: "
-						<<tempPosMom(0)<<","<<tempPosMom(1)<<","<<tempPosMom(2)<<","
-						<<tempPosMom(3)<<","<<tempPosMom(4)<<","<<tempPosMom(5)<<","
-						<<"\n";
+				std::cout << "DEBUG: " << " pos: " << tempPosMom(0) << ","
+						<< tempPosMom(1) << "," << tempPosMom(2) << ","
+						<< tempPosMom(3) << "," << tempPosMom(4) << ","
+						<< tempPosMom(5) << "," << "\n";
 
 				int nDim = 2;
 				TVectorD hitCoords(nDim);
 				TMatrixDSym hitCov(2);
 
-				for(int i0 = 0;i0<2;i0++)
-				{
-					hitCoords(i0) = tempPosMom(i0) + gRandom->Gaus(0, resolution);
-					hitCov(i0,i0) = resolution * resolution;
+				for (int i0 = 0; i0 < 2; i0++) {
+					hitCoords(i0) = tempPosMom(i0)
+							+ gRandom->Gaus(0, resolution);
+					hitCov(i0, i0) = resolution * resolution;
 				}
 				genfit::AbsMeasurement* measurement =
 						new genfit::PlanarMeasurement(hitCoords, hitCov,
 								int(genfit::StripUV), measurementCounter_,
 								nullptr);
 				std::vector<genfit::AbsMeasurement*> measurements;
-				static_cast<genfit::PlanarMeasurement*>(measurement)->setPlane(plane, measurementCounter_);
+				static_cast<genfit::PlanarMeasurement*>(measurement)->setPlane(
+						plane, measurementCounter_);
 				measurements.push_back(measurement);
 //				std::vector<genfit::AbsMeasurement*> measurements = measurementCreator.create(genfit::StripUV, i*20.);
 				fitTrack.insertPoint(
@@ -192,8 +204,9 @@ int main() {
 			display->addEvent(&fitTrack);
 		}
 
-		fitTrack.getCardinalRep()->extrapolateToPoint(currentState,TVector3(0,0,0));
-		std::cout<<"DEBUG: extrapolateToPoint(0,0,0)\n";
+		fitTrack.getCardinalRep()->extrapolateToPoint(currentState,
+				TVector3(0, 0, 0));
+		std::cout << "DEBUG: extrapolateToPoint(0,0,0)\n";
 		currentState.Print();
 
 	}    // end loop over events
