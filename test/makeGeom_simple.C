@@ -57,15 +57,18 @@ void makeGeom_simple() {
 			1000.);
 	gGeoManager->SetTopVolume(top); // mandatory !
 
-	double thickness(0.05);
+	double thickness(0.005);//50 micron (MAPS)
 	double distance = 1;
 
+	double radius[] = {5, 10, 15, 20};
 	for (unsigned int i = 1; i < 5; ++i) {
-		//TGeoVolume *redBullCan = gGeoManager->MakeTube("redBullCan", sil, i*distance, i*distance+thickness, 20.);//, 90., 270.);
-		//TGeoVolume *redBullCan = gGeoManager->MakeBox("redBullCan", sil, 100, 100, 0.005);// 50 micron Si
-		TGeoVolume *redBullCan = gGeoManager->MakeBox("redBullCan", pb, 50, 50, 1);//1 cm Pb
-		TGeoVolume *redBullCan = gGeoManager->MakeBox("redBullCan", sil, 50, 50, 1);//1 cm Si
+//		TGeoVolume *redBullCan = gGeoManager->MakeTube("redBullCan", sil, radius[i-1], radius[i-1]+thickness, 20.);
+//		redBullCan->SetLineColor(kRed);
+//		top->AddNode(redBullCan, i, new TGeoTranslation(0, 0, 0));
 
+		TGeoVolume *redBullCan = gGeoManager->MakeBox("redBullCan", sil, 50, 50, 0.005);// 50 micron Si
+		//TGeoVolume *redBullCan = gGeoManager->MakeBox("redBullCan", pb, 50, 50, 1);//1 cm Pb
+		//TGeoVolume *redBullCan = gGeoManager->MakeBox("redBullCan", sil, 50, 50, 1);//1 cm Si
 		redBullCan->SetLineColor(kRed);
 		top->AddNode(redBullCan, i, new TGeoTranslation(0, 0, (i) * 20));
 	}
