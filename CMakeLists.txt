@@ -381,11 +381,12 @@ ADD_GENFIT_TEST( testRKTrackRep     test/minimalFittingExample/main4.cc)
 ADD_GENFIT_TEST( measurementFactoryExample test/measurementFactoryExample/main.cc)
 ADD_GENFIT_TEST( streamerTest              test/streamerTest/main.cc)
 ADD_GENFIT_TEST( unitTests                 test/unitTests/main.cc)
-ADD_GENFIT_TEST( testFitter               test/sPHENIX_Test/testFitter.cc)
 if(DEFINED RAVE)
   ADD_GENFIT_TEST( vertexingTest           test/vertexingTest/main.cc)
   ADD_GENFIT_TEST( vertexingTestRead       test/vertexingTest/read.cc)
 endif()
+ADD_GENFIT_TEST( testFitter               test/sPHENIX_Test/testFitter.cc)
+ADD_GENFIT_TEST( fitPHG4Hits               test/sPHENIX_Test/fitPHG4Hits.cc)
 
 # generate and install following configuration files
 #GENERATE_PACKAGE_CONFIGURATION_FILES( genfitConfig.cmake genfitConfigVersion.cmake )
