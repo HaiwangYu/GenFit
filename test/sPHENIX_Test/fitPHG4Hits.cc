@@ -37,21 +37,26 @@
 //#include <KalmanFitterRefTrack.h>
 #include <KalmanFitterInfo.h>
 //#include <KalmanFitStatus.h>
-#include "TH1D.h"
+#include <TH1D.h>
+#include <TH2D.h>
 #include <TFile.h>
+#include <TTree.h>
 #include <TCanvas.h>
+#include <TROOT.h>
+#include <TStyle.h>
 
 #define LogDEBUG    std::cout<<"DEBUG: "<<__LINE__<<"\n"
 
 int main(int argc, char **argv) {
 
-	double magnetic_field = atof(argv[1]); //kGauss
-	double momentum_z = atof(argv[2]); // GeV
-	double init_z = atof(argv[3]); //cm
-	double dest_z = atof(argv[4]); //cm
+	double magnetic_field = 20.; //kGauss
+	double momentum_initial = 10.; // GeV
+
+	double dest_z = 10; //cm
 	std::cout << magnetic_field << "\n";
-	double resolution_detector = 0.1;
-	unsigned int nMeasurements = 4; //4 stations
+	//double resolution_detector = 0.1;
+	double resolution_detector = 0.005; //50 micron
+	unsigned int nMeasurements = 3; //
 	gRandom->SetSeed(14);
 
 	// init MeasurementCreator
@@ -61,7 +66,7 @@ int main(int argc, char **argv) {
 	new TGeoManager("Geometry", "Geane geometry");
 	TGeoManager::Import("genfitGeom.root");
 	genfit::FieldManager::getInstance()->init(
-			new genfit::ConstField(magnetic_field, 0., 0.)); // kGauss
+			new genfit::ConstField(0., 0., magnetic_field)); // kGauss
 	genfit::MaterialEffects::getInstance()->init(
 			new genfit::TGeoMaterialInterface());
 
@@ -71,18 +76,21 @@ int main(int argc, char **argv) {
 	// init fitter
 	genfit::AbsKalmanFitter* fitter = new genfit::KalmanFitterRefTrack();
 
-	TH1D *hmomRes = new TH1D("hmomRes", "mom res", 500,
-			-20 * resolution_detector * momentum_z / nMeasurements,
-			20 * resolution_detector * momentum_z / nMeasurements);
-	TH1D *hupRes = new TH1D("hupRes", "u' res", 500,
+	TFile *fout = TFile::Open("results.root","recreate");
+	fout->cd();
+
+	TH1D *hmomRes = new TH1D("hmomRes", "mom residual", 500,
+			-200 * resolution_detector * momentum_initial / nMeasurements,
+			200 * resolution_detector * momentum_initial / nMeasurements);
+	TH1D *hupRes = new TH1D("hupRes", "u' residual", 500,
 			-15 * resolution_detector / nMeasurements,
 			15 * resolution_detector / nMeasurements);
-	TH1D *hvpRes = new TH1D("hvpRes", "v' res", 500,
+	TH1D *hvpRes = new TH1D("hvpRes", "v' residual", 500,
 			-15 * resolution_detector / nMeasurements,
 			15 * resolution_detector / nMeasurements);
-	TH1D *huRes = new TH1D("huRes", "u res", 500, -15 * resolution_detector,
+	TH1D *huRes = new TH1D("huRes", "u residual", 500, -15 * resolution_detector,
 			15 * resolution_detector);
-	TH1D *hvRes = new TH1D("hvRes", "v res", 500, -15 * resolution_detector,
+	TH1D *hvRes = new TH1D("hvRes", "v residual", 500, -15 * resolution_detector,
 			15 * resolution_detector);
 
 	TH1D *hqopPu = new TH1D("hqopPu", "q/p pull", 200, -6., 6.);
@@ -93,21 +101,54 @@ int main(int argc, char **argv) {
 	TH1D *huPu = new TH1D("huPu", "u pull", 200, -6., 6.);
 	TH1D *hvPu = new TH1D("hvPu", "v pull", 200, -6., 6.);
 
-	TH1D *hchi2Forward = new TH1D("hchi2Forward", "Fit #chi^{2}", 100,
-			0, 3.);
+	TH1D *hchi2Forward = new TH1D("hchi2Forward", "Fit #chi^{2}", 100, 0, 3.);
+
+	TH2D *hmomresolution = new TH2D("hmomresolution", "#delta p/p; p[GeV/c]; #delta p/p", 200, 0,10, 100, 0, 1.);
+
+	TFile *fPHG4Hits = TFile::Open("G4ePHENIX_1-10GeV.root_NTUPLE.root", "read");
+	if (!fPHG4Hits) {
+		std::cout << "No TFile Openned: " << __LINE__ << "\n";
+		return -1;
+	}
+	TTree *T = (TTree*) fPHG4Hits->Get("T");
+	if (!T) {
+		std::cout << "No TTree Found: " << __LINE__ << "\n";
+		return -1;
+	}
+
+#define NLAYERS 3
+
+	double reco_x[NLAYERS];
+	double reco_y[NLAYERS];
+	double reco_z[NLAYERS];
+	double true_p;
+	T->SetBranchAddress("true_p", &true_p);
+	T->SetBranchAddress("layer_1_x", &reco_x[0]);
+	T->SetBranchAddress("layer_1_y", &reco_y[0]);
+	T->SetBranchAddress("layer_1_z", &reco_z[0]);
+	T->SetBranchAddress("layer_2_x", &reco_x[1]);
+	T->SetBranchAddress("layer_2_y", &reco_y[1]);
+	T->SetBranchAddress("layer_2_z", &reco_z[1]);
+	T->SetBranchAddress("layer_3_x", &reco_x[2]);
+	T->SetBranchAddress("layer_3_y", &reco_y[2]);
+	T->SetBranchAddress("layer_3_z", &reco_z[2]);
 
 	// main loop
-	for (unsigned int iEvent = 0; iEvent < 1000; ++iEvent) {
+	for (unsigned int ientry = 0; ientry < T->GetEntries(); ++ientry) {
+	//for (unsigned int ientry = 0; ientry < 10; ++ientry) {
+
+		T->GetEntry(ientry);
 
 		// true start values
-		TVector3 init_pos(0, 0, init_z); //cm
-		TVector3 init_mom(0, 0, momentum_z); //GeV
+		TVector3 init_pos(0, 0, 0); //cm
+		TVector3 init_mom(true_p, 0, 0);
+//		TVector3 init_mom(momentum_initial, 0, 0); //GeV
 //    init_mom.SetPhi(gRandom->Uniform(0.,2*TMath::Pi()));
 //    init_mom.SetTheta(gRandom->Uniform(0.4*TMath::Pi(),0.6*TMath::Pi()));
 //    init_mom.SetMag(gRandom->Uniform(0.2, 1.));
 
 		// helix track model
-		const int pdg = 13; //-13: mu+, 13: mu-
+		const int pdg = -13; //-13: mu+, 13: mu-
 		const double charge =
 				TDatabasePDG::Instance()->GetParticle(pdg)->Charge() / (3.);
 //    genfit::HelixTrackModel* helix = new genfit::HelixTrackModel(init_pos, init_mom, charge);
@@ -138,11 +179,12 @@ int main(int argc, char **argv) {
 
 //		measurementCreator.setResolution(resolution_detector);
 
-		for (int i = 0; i < 3; ++i)
-			seed_cov(i, i) = resolution_detector * resolution_detector;
-		for (int i = 3; i < 6; ++i)
-			seed_cov(i, i) = pow(resolution_detector / nMeasurements / sqrt(3),
-					2);
+		for (int ilayer = 0; ilayer < 3; ++ilayer)
+			seed_cov(ilayer, ilayer) = resolution_detector
+					* resolution_detector;
+		for (int ilayer = 3; ilayer < 6; ++ilayer)
+			seed_cov(ilayer, ilayer) = pow(
+					resolution_detector / nMeasurements / sqrt(3), 2);
 
 //		seed_cov(0, 0) = 0;
 //		seed_cov(1, 1) = 0;
@@ -153,8 +195,8 @@ int main(int argc, char **argv) {
 
 		// trackrep
 		genfit::AbsTrackRep* rep = new genfit::RKTrackRep(pdg);
-		genfit::AbsTrackRep* measurementCreatorRep = new genfit::RKTrackRep(pdg);
-
+		genfit::AbsTrackRep* measurementCreatorRep = new genfit::RKTrackRep(
+				pdg);
 
 		// seed start state
 		genfit::MeasuredStateOnPlane seedMSoP(rep);
@@ -165,7 +207,6 @@ int main(int argc, char **argv) {
 		initMSoP.setPosMomCov(init_pos, init_mom, seed_cov);
 		const genfit::StateOnPlane initSoP(initMSoP);
 
-
 		// create track
 		TVectorD seedState(6);
 		TMatrixDSym seedCov(6);
@@ -175,52 +216,50 @@ int main(int argc, char **argv) {
 		TVectorD initState(6);
 		TMatrixDSym initCov(6);
 		initMSoP.get6DStateCov(seedState, seedCov);
-		genfit::Track measurementCreatorTrack(measurementCreatorRep, initState, initCov);
+		genfit::Track measurementCreatorTrack(measurementCreatorRep, initState,
+				initCov);
 
 		genfit::MeasuredStateOnPlane currentState = seedMSoP;
 
 		genfit::SharedPlanePtr destPlane = boost::make_shared<genfit::DetPlane>(
 				TVector3(0, 0, dest_z), TVector3(0, 0, 1));
-		//rep->setDebugLvl(10);
-
-//		std::cout << "============= State at z = " << init_z
-//				<< ": =============\n";
-//		currentState.Print();
-//		rep->extrapolateToPlane(currentState, destPlane);
-//		std::cout << "============= State at z = " << dest_z
-//				<< ": =============\n";
-//		currentState.Print();
 
 		int measurementCounter_ = 0;
 		// create smeared measurements and add to track
 		try {
-			for (unsigned int i = 1; i < 5; ++i) {
+			for (unsigned int ilayer = 0; ilayer < NLAYERS; ++ilayer) {
 
 				genfit::SharedPlanePtr plane(
-						new genfit::DetPlane(TVector3(0, 0, i * 20),
-								TVector3(0, 0, 1)));
+						new genfit::DetPlane(
+								TVector3(reco_x[ilayer], reco_y[ilayer],
+										reco_z[ilayer]),
+								TVector3(reco_x[ilayer], reco_y[ilayer],
+										0)));
 
 //				genfit::MeasuredStateOnPlane tempState = seedMSoP;
 //				rep->extrapolateToPlane(tempState, plane);
-				genfit::MeasuredStateOnPlane tempState = initMSoP;
-				measurementCreatorRep->extrapolateToPlane(tempState, plane);
-				TVectorD tempPosMom(6);
-				TMatrixDSym tempPosMomCov(6);
-				tempState.get6DStateCov(tempPosMom, tempPosMomCov);
 
-				std::cout << "DEBUG: " << " position (cm):" << tempPosMom(0)
-						<< "," << tempPosMom(1) << "," << tempPosMom(2)
-						<< "; \n" << " momentum (GeV): " << tempPosMom(3) << ","
-						<< tempPosMom(4) << "," << tempPosMom(5) << "." << "\n";
+//				genfit::MeasuredStateOnPlane tempState = initMSoP;
+//				measurementCreatorRep->extrapolateToPlane(tempState, plane);
+//				TVectorD tempPosMom(6);
+//				TMatrixDSym tempPosMomCov(6);
+//				tempState.get6DStateCov(tempPosMom, tempPosMomCov);
+
+				std::cout << "DEBUG: " << " position (cm):" <<
+						reco_x[ilayer] << ","<<
+						reco_y[ilayer] << ","<<
+						reco_z[ilayer] << "\n";
 
 				int nDim = 2;
 				TVectorD hitCoords(nDim);
 				TMatrixDSym hitCov(nDim);
 
-				for (int i0 = 0; i0 < nDim; i0++) {
-					hitCoords(i0) = tempPosMom(i0)
-							+ gRandom->Gaus(0, resolution_detector);
-					hitCov(i0, i0) = resolution_detector * resolution_detector;
+				hitCoords(0) = 0 + gRandom->Gaus(0, resolution_detector);
+				hitCoords(1) = 0 + gRandom->Gaus(0, resolution_detector);
+
+				for (int iDim = 0; iDim < nDim; iDim++) {
+					hitCov(iDim, iDim) = resolution_detector
+							* resolution_detector;
 				}
 				genfit::AbsMeasurement* measurement =
 						new genfit::PlanarMeasurement(hitCoords, hitCov, -1,
@@ -250,7 +289,7 @@ int main(int argc, char **argv) {
 		//check
 		assert(fitTrack.checkConsistency());
 
-		if (iEvent < 10) {
+		if (ientry < 10) {
 			// add track to event display
 			display->addEvent(&fitTrack);
 		}
@@ -298,21 +337,29 @@ int main(int argc, char **argv) {
 		const TVectorD& state = kfsop.getState();
 		const TMatrixDSym& cov = kfsop.getCov();
 
-		hmomRes->Fill((-charge / state[0] - seed_mom.Mag()));
+		hmomRes->Fill((charge / state[0] - init_mom.Mag())/init_mom.Mag());
+		//hmomRes->Fill((state[0] - 1./init_mom.Mag()));
 		hupRes->Fill((state[1] - referenceState[1]));
 		hvpRes->Fill((state[2] - referenceState[2]));
 		huRes->Fill((state[3] - referenceState[3]));
 		hvRes->Fill((state[4] - referenceState[4]));
 
-		hqopPu->Fill((-state[0] - referenceState[0]) / sqrt(cov[0][0]));
+		hqopPu->Fill((state[0] - referenceState[0]) / sqrt(cov[0][0]));
 		hupPu->Fill((state[1] - referenceState[1]) / sqrt(cov[1][1]));
 		hvpPu->Fill((state[2] - referenceState[2]) / sqrt(cov[2][2]));
 		huPu->Fill((state[3] - referenceState[3]) / sqrt(cov[3][3]));
 		hvPu->Fill((state[4] - referenceState[4]) / sqrt(cov[4][4]));
 
-	}    // end loop over events
+		hmomresolution->Fill(true_p,true_p*sqrt(cov[0][0]));
 
-	TCanvas* c1 = new TCanvas();
+	}    // end loop over events
+	fPHG4Hits->Close();
+
+
+	gStyle->SetOptFit();
+	fout->cd();
+
+	TCanvas* c1 = new TCanvas("c1","c1");
 	c1->Divide(2, 3);
 
 	c1->cd(1);
@@ -335,9 +382,12 @@ int main(int argc, char **argv) {
 	hvRes->Fit("gaus");
 	hvRes->Draw();
 
+	c1->Update();
+
+	fout->cd();
 	c1->Write();
 
-	TCanvas* c2 = new TCanvas();
+	TCanvas* c2 = new TCanvas("c2","c2");
 	c2->Divide(2, 3);
 
 	c2->cd(1);
@@ -368,7 +418,16 @@ int main(int argc, char **argv) {
 	hvPu->Fit("gaus");
 	hvPu->Draw();
 
+	c2->Update();
+	fout->cd();
 	c2->Write();
+
+	TCanvas *c3 = new TCanvas("c3","c3");
+	c3->cd();
+	hmomresolution->Draw();
+	c3->Update();
+
+
 	delete fitter;
 
 	// open event display
