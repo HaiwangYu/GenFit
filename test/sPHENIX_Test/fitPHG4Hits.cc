@@ -45,6 +45,8 @@
 #include <TROOT.h>
 #include <TStyle.h>
 
+#include <Field2D.h>
+
 #define LogDEBUG    std::cout<<"DEBUG: "<<__LINE__<<"\n"
 
 int main(int argc, char **argv) {
@@ -63,10 +65,19 @@ int main(int argc, char **argv) {
 	//genfit::MeasurementCreator measurementCreator;
 
 	// init geometry and mag. field
-	new TGeoManager("Geometry", "Geane geometry");
-	TGeoManager::Import("genfitGeom.root");
+//	new TGeoManager("Geometry", "Geane geometry");
+//	TGeoManager::Import("genfitGeom.root");
+	new TGeoManager("Default", "Geane geometry");
+	TGeoManager::Import("sPHENIX_Geo.root");
+//	genfit::FieldManager::getInstance()->init(
+//			new genfit::ConstField(0., 0., magnetic_field)); // kGauss
+	genfit::Field2D *fieldMap = new genfit::Field2D("sPHENIX.2d.root");
+	double bx,by,bz;
+	fieldMap->get(1,0,0,bx,by,bz);
+	std::cout<<"DEBUG: "<<bx<<","<<by<<","<<bz<<"\n";
+	//fieldMap->plot();
 	genfit::FieldManager::getInstance()->init(
-			new genfit::ConstField(0., 0., magnetic_field)); // kGauss
+			fieldMap);
 	genfit::MaterialEffects::getInstance()->init(
 			new genfit::TGeoMaterialInterface());
 
@@ -134,8 +145,8 @@ int main(int argc, char **argv) {
 	T->SetBranchAddress("layer_3_z", &reco_z[2]);
 
 	// main loop
-	for (unsigned int ientry = 0; ientry < T->GetEntries(); ++ientry) {
-	//for (unsigned int ientry = 0; ientry < 10; ++ientry) {
+	//for (unsigned int ientry = 0; ientry < T->GetEntries(); ++ientry) {
+	for (unsigned int ientry = 0; ientry < 10; ++ientry) {
 
 		T->GetEntry(ientry);
 
