@@ -151,6 +151,14 @@ TVector3 Field2D::get(const TVector3& v) const {
 void Field2D::get(const double&x, const double&y, const double&z, double& Bx, double& By, double& Bz) const {
 	double r = sqrt(x*x + y*y);
 
+	if(fabs(r) > 300 || fabs(z) > 400)
+	{
+		Bx = 0;
+		By = 0;
+		Bz = 0;
+		return;
+	}
+
 	int bin_z = field_map_r_->GetXaxis()->FindBin(z);
 	int bin_r = field_map_r_->GetYaxis()->FindBin(r);
 
@@ -165,6 +173,8 @@ void Field2D::get(const double&x, const double&y, const double&z, double& Bx, do
 		Bx = 0;
 		By = 0;
 	}
+
+
 
 	//std::cout<<"DEBUG: "<<__LINE__<<": "<<z<<","<<r<<","<<bin_z<<","<<bin_r<<": "<<Br<<","<<Bz<<"\n";
 }

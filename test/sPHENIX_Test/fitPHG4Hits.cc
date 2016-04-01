@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
 	double bx,by,bz;
 	fieldMap->get(1,0,0,bx,by,bz);
 	std::cout<<"DEBUG: "<<bx<<","<<by<<","<<bz<<"\n";
-	fieldMap->plot();
+	//fieldMap->plot();
 	genfit::FieldManager::getInstance()->init(
 			fieldMap);
 	genfit::MaterialEffects::getInstance()->init(
@@ -145,8 +145,8 @@ int main(int argc, char **argv) {
 	T->SetBranchAddress("layer_3_z", &reco_z[2]);
 
 	// main loop
-	//for (unsigned int ientry = 0; ientry < T->GetEntries(); ++ientry) {
-	for (unsigned int ientry = 0; ientry < 10; ++ientry) {
+	for (unsigned int ientry = 0; ientry < T->GetEntries(); ++ientry) {
+	//for (unsigned int ientry = 0; ientry < 10; ++ientry) {
 
 		T->GetEntry(ientry);
 
