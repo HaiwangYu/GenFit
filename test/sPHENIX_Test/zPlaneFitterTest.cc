@@ -8,7 +8,7 @@
 
 #include <MaterialEffects.h>
 #include <RKTrackRep.h>
-#include <G4eTrackRep.h>
+//#include <G4eTrackRep.h>
 #include <TGeoMaterialInterface.h>
 
 #include <EventDisplay.h>

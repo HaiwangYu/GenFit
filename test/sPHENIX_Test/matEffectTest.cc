@@ -8,7 +8,7 @@
 
 #include <MaterialEffects.h>
 #include <RKTrackRep.h>
-#include <G4eTrackRep.h>
+//#include <G4eTrackRep.h>
 #include <TGeoMaterialInterface.h>
 
 #include <EventDisplay.h>
@@ -101,8 +101,8 @@ int main() {
 
 
     // trackrep
-    //genfit::AbsTrackRep* rep = new genfit::RKTrackRep(pdg);
-    genfit::AbsTrackRep* rep = new genfit::G4eTrackRep(pdg);
+    genfit::AbsTrackRep* rep = new genfit::RKTrackRep(pdg);
+    //genfit::AbsTrackRep* rep = new genfit::G4eTrackRep(pdg);
 
     // smeared start state
     genfit::MeasuredStateOnPlane stateSmeared(rep);
