@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
 	double bx,by,bz;
 	fieldMap->get(1,0,0,bx,by,bz);
 	std::cout<<"DEBUG: "<<bx<<","<<by<<","<<bz<<"\n";
-	//fieldMap->plot();
+	fieldMap->plot();
 	genfit::FieldManager::getInstance()->init(
 			fieldMap);
 	genfit::MaterialEffects::getInstance()->init(

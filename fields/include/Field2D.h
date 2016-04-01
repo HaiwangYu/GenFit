@@ -29,6 +29,8 @@
 #include "boost/tuple/tuple_comparison.hpp"
 #include <map>
 
+#include <TH2D.h>
+
 
 namespace genfit {
 
@@ -40,8 +42,8 @@ namespace genfit {
 class Field2D : public AbsBField {
  public:
   //! define the constant field in this ctor
-  Field2D()
-  { field_map_.clear(); }
+  Field2D() : field_map_r_(NULL), field_map_z_(NULL)
+  { ; }
 
   Field2D(std::string inname)
   { initialize(inname); }
@@ -55,9 +57,8 @@ class Field2D : public AbsBField {
   void get(const double& posX, const double& posY, const double& posZ, double& Bx, double& By, double& Bz) const;
 
  private:
-  typedef std::map< boost::tuple<double,double>, boost::tuple<double,double> > BMAP2D;
-  typedef std::pair< boost::tuple<double,double>, boost::tuple<double,double> > BPAIR2D;
-  BMAP2D field_map_;
+  TH2D *field_map_r_;
+  TH2D *field_map_z_;
 };
 
 } /* End of namespace genfit */
