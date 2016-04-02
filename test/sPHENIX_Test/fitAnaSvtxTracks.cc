@@ -37,6 +37,10 @@
 //#include <KalmanFitterRefTrack.h>
 #include <KalmanFitterInfo.h>
 //#include <KalmanFitStatus.h>
+#include <KalmanFitter.h>
+
+
+
 #include <TH1D.h>
 #include <TH2D.h>
 #include <TFile.h>
@@ -119,9 +123,10 @@ int main(int argc, char **argv) {
 
 	TH2D *hmomresolution = new TH2D("hmomresolution", "#delta p/p; 1/p[1/(GeV/c)]; #delta p/p", 200, 0.05, 2, 100, 0, 0.1);
 	TH2D *hpT_resolution = new TH2D("hpT_resolution", "#delta p_{T}/p_{T}; 1/p_{T} [1/(GeV/c)]; #delta p_{T}/p_{T}", 200, 0.05, 2, 100, 0, 0.1);
-	TH1D *hpx_residual = new TH1D("hpx_residual", "px^{GenFit} - px^{Current}; px [GeV/c]; #Delta px", 100, -10, 10);
-	TH1D *hpy_residual = new TH1D("hpy_residual", "py^{GenFit} - py^{Current}; py [GeV/c]; #Delta py", 100, -10, 10);
-	TH1D *hpz_residual = new TH1D("hpz_residual", "pz^{GenFit} - pz^{Current}; pz [GeV/c]; #Delta pz", 100, -10, 10);
+	TH1D *hpx_residual = new TH1D("hpx_residual", "px^{GenFit} - px^{Current}; #Delta px [GeV/c]; ", 100, -2, 2);
+	TH1D *hpy_residual = new TH1D("hpy_residual", "py^{GenFit} - py^{Current}; #Delta py [GeV/c]; ", 100, -2, 2);
+	TH1D *hpz_residual = new TH1D("hpz_residual", "pz^{GenFit} - pz^{Current}; #Delta pz [GeV/c]; ", 100, -2, 2);
+	TH1D *hptot_residual = new TH1D("hptot_residual", "ptot^{GenFit} - ptot^{Current}; #Delta ptot [GeV/c]; ", 100, -2, 2);
 
 
 	TFile *fPHG4Hits = TFile::Open("AnaSvtxTracksForGenFit.root", "read");
@@ -154,26 +159,19 @@ int main(int argc, char **argv) {
 
 	// main loop
 	for (unsigned int ientry = 0; ientry < T->GetEntries(); ++ientry) {
-	//for (unsigned int ientry = 0; ientry < 10; ++ientry) {
-
+	//for (unsigned int ientry = 0; ientry < 1; ++ientry) {
+		//T->GetEntry(atoi(argv[1]));
 		T->GetEntry(ientry);
-
-		double true_p = sqrt(true_px*true_px + true_py*true_py + true_pz*true_pz);
 
 		// true start values
 		TVector3 init_pos(0, 0, 0); //cm
 		TVector3 init_mom(true_px, true_py, true_pz);
-//		TVector3 init_mom(momentum_initial, 0, 0); //GeV
-//    init_mom.SetPhi(gRandom->Uniform(0.,2*TMath::Pi()));
-//    init_mom.SetTheta(gRandom->Uniform(0.4*TMath::Pi(),0.6*TMath::Pi()));
-//    init_mom.SetMag(gRandom->Uniform(0.2, 1.));
+		double true_p = init_mom.Mag();
+		double true_pT = init_mom.Pt();
 
-		// helix track model
 		const int pdg = -13; //-13: mu+, 13: mu-
 		const double charge =
 				TDatabasePDG::Instance()->GetParticle(pdg)->Charge() / (3.);
-//    genfit::HelixTrackModel* helix = new genfit::HelixTrackModel(init_pos, init_mom, charge);
-//    measurementCreator.setTrackModel(helix);
 
 		// Seed: use smeared values
 		const bool smearPosMom = true; // init the Reps with smeared init_pos and init_mom
@@ -200,19 +198,12 @@ int main(int argc, char **argv) {
 
 //		measurementCreator.setResolution(resolution_detector);
 
-		for (int ilayer = 0; ilayer < NLAYERS; ++ilayer)
+		for (int ilayer = 0; ilayer < 3; ++ilayer)
 			seed_cov(ilayer, ilayer) = resolution_detector
 					* resolution_detector;
 		for (int ilayer = 3; ilayer < 6; ++ilayer)
 			seed_cov(ilayer, ilayer) = pow(
 					resolution_detector / nMeasurements / sqrt(3), 2);
-
-//		seed_cov(0, 0) = 0;
-//		seed_cov(1, 1) = 0;
-//		seed_cov(2, 2) = 0;
-//		seed_cov(3, 3) = 0;
-//		seed_cov(4, 4) = 0;
-//		seed_cov(5, 5) = 0;
 
 		// trackrep
 		genfit::AbsTrackRep* rep = new genfit::RKTrackRep(pdg);
@@ -257,19 +248,10 @@ int main(int argc, char **argv) {
 								TVector3(reco_x[ilayer], reco_y[ilayer],
 										0)));
 
-//				genfit::MeasuredStateOnPlane tempState = seedMSoP;
-//				rep->extrapolateToPlane(tempState, plane);
-
-//				genfit::MeasuredStateOnPlane tempState = initMSoP;
-//				measurementCreatorRep->extrapolateToPlane(tempState, plane);
-//				TVectorD tempPosMom(6);
-//				TMatrixDSym tempPosMomCov(6);
-//				tempState.get6DStateCov(tempPosMom, tempPosMomCov);
-
-				std::cout << "DEBUG: " << " position (cm):" <<
-						reco_x[ilayer] << ","<<
-						reco_y[ilayer] << ","<<
-						reco_z[ilayer] << "\n";
+//				std::cout << "DEBUG: " << " position (cm):" <<
+//						reco_x[ilayer] << ","<<
+//						reco_y[ilayer] << ","<<
+//						reco_z[ilayer] << "\n";
 
 				int nDim = 2;
 				TVectorD hitCoords(nDim);
@@ -282,10 +264,12 @@ int main(int argc, char **argv) {
 					hitCov(iDim, iDim) = resolution_detector
 							* resolution_detector;
 				}
+
 				genfit::AbsMeasurement* measurement =
 						new genfit::PlanarMeasurement(hitCoords, hitCov, -1,
 								measurementCounter_,
 								nullptr);
+
 //				measurement->Print();
 				std::vector<genfit::AbsMeasurement*> measurements;
 				static_cast<genfit::PlanarMeasurement*>(measurement)->setPlane(
@@ -302,9 +286,11 @@ int main(int argc, char **argv) {
 		}
 
 		//check
+
 		assert(fitTrack.checkConsistency());
 
 		// do the fit
+		fitter->setDebugLvl(1);
 		fitter->processTrack(&fitTrack);
 
 		//check
@@ -319,8 +305,9 @@ int main(int argc, char **argv) {
 		if (!fitTrack.getFitStatus(rep)->isFitConverged()) {
 			std::cout
 					<< "Track could not be fitted successfully! Fit is not converged! \n";
-			continue;
+			//continue;
 		}
+
 
 //		fitTrack.Print();
 		double chi2 = fitTrack.getFitStatus(rep)->getChi2();
@@ -332,7 +319,7 @@ int main(int argc, char **argv) {
 //		std::cout << "DEBUG: extrapolateToPoint(0,0,0)\n";
 //		fitTrack.getCardinalRep()
 		rep->extrapolateToPlane(currentState, seedSoP.getPlane());
-		std::cout << "DEBUG: yuhw extrapolateToPlane: \n";
+		//std::cout << "DEBUG: yuhw extrapolateToPlane: \n";
 //		currentState.Print();
 
 		genfit::TrackPoint* tp = fitTrack.getPointWithMeasurementAndFitterInfo(
@@ -346,7 +333,7 @@ int main(int argc, char **argv) {
 		// extrapolate back to reference plane.
 		try {
 			rep->extrapolateToPlane(kfsop, initSoP.getPlane());
-			std::cout << "DEBUG: Official extrapolateToPlane: \n";
+			//std::cout << "DEBUG: Official extrapolateToPlane: \n";
 //			kfsop.Print();
 		} catch (genfit::Exception& e) {
 			std::cerr << "Exception, next track" << std::endl;
@@ -371,26 +358,24 @@ int main(int argc, char **argv) {
 		huPu->Fill((state[3] - referenceState[3]) / sqrt(cov[3][3]));
 		hvPu->Fill((state[4] - referenceState[4]) / sqrt(cov[4][4]));
 
-		genfit::SharedPlanePtr planeOrigin = boost::make_shared<genfit::DetPlane>(
-				TVector3(0, 0, 0), TVector3(0, 0, 1));
-
-		rep->extrapolateToPlane(kfsop, planeOrigin);
-		referenceState = initSoP.getState();
-		state = kfsop.getState();
-		cov = kfsop.getCov();
-
-		double reco_p = charge / state[0];
-		double reco_px = state[1]*reco_p;
-		double reco_py = state[2]*reco_p;
-		double true_pT = sqrt(true_px*true_px+true_py*true_py);
-		double reco_pT = sqrt(reco_px*reco_px + reco_py*reco_py);
-		double reco_pz = sqrt(reco_p*reco_p - reco_pT*reco_pT);
-
-		hpx_residual->Fill(reco_px - true_px);
-		hpy_residual->Fill(reco_py - true_py);
-		hpz_residual->Fill(reco_pz - true_pz);
-
 		hmomresolution->Fill(1./true_p,true_p*sqrt(cov[0][0]));
+
+
+		//kfsop.Print();
+
+		TVector3 reco_mom = kfsop.getMom();
+
+//		double reco_p  = kfsop.getMom().Mag();
+//		double reco_px = kfsop.getMom().Px();
+//		double reco_py = kfsop.getMom().Py();
+//		double reco_pz = kfsop.getMom().Pz();
+//		double reco_pT = kfsop.getMom().Pt();
+
+		hpx_residual->Fill(reco_mom.Px() - init_mom.Px());
+		hpy_residual->Fill(reco_mom.Py() - init_mom.Py());
+		hpz_residual->Fill(reco_mom.Pz() - init_mom.Pz());
+		hptot_residual->Fill(reco_mom.Mag() - init_mom.Mag());
+
 
 	}    // end loop over events
 	fPHG4Hits->Close();
@@ -475,6 +460,8 @@ int main(int argc, char **argv) {
 	hpy_residual->Draw();
 	c4->cd(3);
 	hpz_residual->Draw();
+	c4->cd(4);
+	hptot_residual->Draw();
 
 	c4->Update();
 
