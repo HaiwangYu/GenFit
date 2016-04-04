@@ -43,6 +43,7 @@
 
 #include <TH1D.h>
 #include <TH2D.h>
+#include <TProfile.h>
 #include <TFile.h>
 #include <TTree.h>
 #include <TCanvas.h>
@@ -63,8 +64,8 @@ int main(int argc, char **argv) {
 
 	double dest_z = 10; //cm
 	std::cout << magnetic_field << "\n";
-	//double resolution_detector = 0.1;
-	double resolution_detector = 0.005; //50 micron
+	//double resolution_detector_xy = 0.1;
+	double resolution_detector_xy = 0.005/3.; //50 micron
 	unsigned int nMeasurements = NLAYERS; //
 	gRandom->SetSeed(14);
 
@@ -79,6 +80,7 @@ int main(int argc, char **argv) {
 //	genfit::FieldManager::getInstance()->init(
 //			new genfit::ConstField(0., 0., magnetic_field)); // kGauss
 	genfit::Field2D *fieldMap = new genfit::Field2D("sPHENIX.2d.root");
+	fieldMap->re_scale(1.4/1.5);// Re-scale to 1.4 T
 	double bx,by,bz;
 	fieldMap->get(1,0,0,bx,by,bz);
 	std::cout<<"DEBUG: "<<bx<<","<<by<<","<<bz<<"\n";
@@ -98,18 +100,18 @@ int main(int argc, char **argv) {
 	fout->cd();
 
 	TH1D *hmomRes = new TH1D("hmomRes", "mom residual", 500,
-			-200 * resolution_detector * momentum_initial / nMeasurements,
-			200 * resolution_detector * momentum_initial / nMeasurements);
+			-200 * resolution_detector_xy * momentum_initial / nMeasurements,
+			200 * resolution_detector_xy * momentum_initial / nMeasurements);
 	TH1D *hupRes = new TH1D("hupRes", "u' residual", 500,
-			-15 * resolution_detector / nMeasurements,
-			15 * resolution_detector / nMeasurements);
+			-15 * resolution_detector_xy / nMeasurements,
+			15 * resolution_detector_xy / nMeasurements);
 	TH1D *hvpRes = new TH1D("hvpRes", "v' residual", 500,
-			-15 * resolution_detector / nMeasurements,
-			15 * resolution_detector / nMeasurements);
-	TH1D *huRes = new TH1D("huRes", "u residual", 500, -15 * resolution_detector,
-			15 * resolution_detector);
-	TH1D *hvRes = new TH1D("hvRes", "v residual", 500, -15 * resolution_detector,
-			15 * resolution_detector);
+			-15 * resolution_detector_xy / nMeasurements,
+			15 * resolution_detector_xy / nMeasurements);
+	TH1D *huRes = new TH1D("huRes", "u residual", 500, -15 * resolution_detector_xy,
+			15 * resolution_detector_xy);
+	TH1D *hvRes = new TH1D("hvRes", "v residual", 500, -15 * resolution_detector_xy,
+			15 * resolution_detector_xy);
 
 	TH1D *hqopPu = new TH1D("hqopPu", "q/p pull", 200, -6., 6.);
 //	TH1D *pVal = new TH1D("pVal", "p-value", 100, 0., 1.00000001);
@@ -121,12 +123,21 @@ int main(int argc, char **argv) {
 
 	TH1D *hchi2Forward = new TH1D("hchi2Forward", "Fit #chi^{2}", 100, 0, 3.);
 
-	TH2D *hmomresolution = new TH2D("hmomresolution", "#delta p/p; 1/p[1/(GeV/c)]; #delta p/p", 200, 0.05, 2, 100, 0, 0.1);
-	TH2D *hpT_resolution = new TH2D("hpT_resolution", "#delta p_{T}/p_{T}; 1/p_{T} [1/(GeV/c)]; #delta p_{T}/p_{T}", 200, 0.05, 2, 100, 0, 0.1);
-	TH1D *hpx_residual = new TH1D("hpx_residual", "px^{GenFit} - px^{Current}; #Delta px [GeV/c]; ", 100, -2, 2);
-	TH1D *hpy_residual = new TH1D("hpy_residual", "py^{GenFit} - py^{Current}; #Delta py [GeV/c]; ", 100, -2, 2);
-	TH1D *hpz_residual = new TH1D("hpz_residual", "pz^{GenFit} - pz^{Current}; #Delta pz [GeV/c]; ", 100, -2, 2);
-	TH1D *hptot_residual = new TH1D("hptot_residual", "ptot^{GenFit} - ptot^{Current}; #Delta ptot [GeV/c]; ", 100, -2, 2);
+	//TH2D *hpT_residual_vs_pT = new TH2D("hpT_residual_vs_pT", "#delta pT/pT; pT[GeV/c]; #Delta pT/pT", 200, 1, 40, 100, 0, 0.1);
+	TH2D *hpT_residual_vs_pT = new TH2D("hpT_residual_vs_pT", "#Delta pT/pT; pT[GeV/c]; #Delta pT/pT", 80, 0.5, 40.5, 1000, -1, 1);
+	TH2D *hADpT_residual_vs_pT = (TH2D*) hpT_residual_vs_pT->Clone("hADpT_residual_vs_pT");
+
+
+	TH1D *hpx_residual = new TH1D("hpx_residual", "px^{GenFit} - px^{True}; #Delta px [GeV/c]; ", 100, -0.5, 0.5);
+	TH1D *hpy_residual = new TH1D("hpy_residual", "py^{GenFit} - py^{True}; #Delta py [GeV/c]; ", 100, -0.5, 0.5);
+	TH1D *hpz_residual = new TH1D("hpz_residual", "pz^{GenFit} - pz^{True}; #Delta pz [GeV/c]; ", 100, -0.5, 0.5);
+	TH1D *hptot_residual = new TH1D("hptot_residual", "ptot^{GenFit} - ptot^{True}; #Delta ptot [GeV/c]; ", 100, -1, 1);
+
+	TH1D *hpT_residual = new TH1D("hpT_residual", "p_{T}^{GenFit} - p_{T}^{True}; #Delta p{T} [GeV/c]; ", 100, -0.5, 0.5);
+	TH1D *hpT_diff = new TH1D("hpT_diff", "p_{T}^{GenFit} - p_{T}^{Current}; #Delta p{T} [GeV/c]; ", 100, -0.5, 0.5);
+
+	TH2D *hpT_resolution_vs_diff = new TH2D("hpT_resolution_vs_diff","", 100, -0.5, 0.5, 100, -0.5, 0.5);
+
 
 
 	TFile *fPHG4Hits = TFile::Open("AnaSvtxTracksForGenFit.root", "read");
@@ -144,24 +155,40 @@ int main(int argc, char **argv) {
 	Float_t reco_x[NLAYERS];
 	Float_t reco_y[NLAYERS];
 	Float_t reco_z[NLAYERS];
+	Float_t reco_size_dphi[NLAYERS];
+	Float_t reco_size_dz[NLAYERS];
 	Float_t true_px;
 	Float_t true_py;
 	Float_t true_pz;
+	Float_t reco_ad_px;
+	Float_t reco_ad_py;
+	Float_t reco_ad_pz;
 	Int_t nhits;
 
 	T->SetBranchAddress("nhits", &nhits);
-	T->SetBranchAddress("px", &true_px);
-	T->SetBranchAddress("py", &true_py);
-	T->SetBranchAddress("pz", &true_pz);
+	T->SetBranchAddress("gpx", &true_px);
+	T->SetBranchAddress("gpy", &true_py);
+	T->SetBranchAddress("gpz", &true_pz);
+	T->SetBranchAddress("px", &reco_ad_px);
+	T->SetBranchAddress("py", &reco_ad_py);
+	T->SetBranchAddress("pz", &reco_ad_pz);
 	T->SetBranchAddress("x", reco_x);
 	T->SetBranchAddress("y", reco_y);
 	T->SetBranchAddress("z", reco_z);
+	T->SetBranchAddress("size_dphi", reco_size_dphi);
+	T->SetBranchAddress("size_dz", reco_size_dz);
 
 	// main loop
 	for (unsigned int ientry = 0; ientry < T->GetEntries(); ++ientry) {
-	//for (unsigned int ientry = 0; ientry < 1; ++ientry) {
+	//for (unsigned int ientry = 0; ientry < 10; ++ientry) {
 		//T->GetEntry(atoi(argv[1]));
 		T->GetEntry(ientry);
+
+		if(nhits < 0)
+		{
+			LogDEBUG;
+			continue;
+		}
 
 		// true start values
 		TVector3 init_pos(0, 0, 0); //cm
@@ -175,7 +202,7 @@ int main(int argc, char **argv) {
 
 		// Seed: use smeared values
 		const bool smearPosMom = true; // init the Reps with smeared init_pos and init_mom
-		const double posSmear = 10 * resolution_detector;     // cm
+		const double posSmear = 10 * resolution_detector_xy;     // cm
 		const double momSmear = 3. / 180. * TMath::Pi();     // rad
 		const double momMagSmear = 0.1;   // relative
 
@@ -196,14 +223,14 @@ int main(int argc, char **argv) {
 		// approximate covariance
 		TMatrixDSym seed_cov(6);
 
-//		measurementCreator.setResolution(resolution_detector);
+//		measurementCreator.setResolution(resolution_detector_xy);
 
 		for (int ilayer = 0; ilayer < 3; ++ilayer)
-			seed_cov(ilayer, ilayer) = resolution_detector
-					* resolution_detector;
+			seed_cov(ilayer, ilayer) = resolution_detector_xy
+					* resolution_detector_xy;
 		for (int ilayer = 3; ilayer < 6; ++ilayer)
 			seed_cov(ilayer, ilayer) = pow(
-					resolution_detector / nMeasurements / sqrt(3), 2);
+					resolution_detector_xy / nMeasurements / sqrt(3), 2);
 
 		// trackrep
 		genfit::AbsTrackRep* rep = new genfit::RKTrackRep(pdg);
@@ -257,13 +284,15 @@ int main(int argc, char **argv) {
 				TVectorD hitCoords(nDim);
 				TMatrixDSym hitCov(nDim);
 
-				hitCoords(0) = 0 + gRandom->Gaus(0, resolution_detector);
-				hitCoords(1) = 0 + gRandom->Gaus(0, resolution_detector);
+				hitCoords(0) = 0;
+				hitCoords(1) = 0;
 
-				for (int iDim = 0; iDim < nDim; iDim++) {
-					hitCov(iDim, iDim) = resolution_detector
-							* resolution_detector;
-				}
+				//double resolution_detector_z = 0.0425/3;
+				hitCov(0, 0) = reco_size_dphi[ilayer]*reco_size_dphi[ilayer]/12.;
+				hitCov(1, 1) = reco_size_dz[ilayer]*reco_size_dz[ilayer]/12.;
+
+				LogDEBUG;
+				plane->Print();
 
 				genfit::AbsMeasurement* measurement =
 						new genfit::PlanarMeasurement(hitCoords, hitCov, -1,
@@ -290,7 +319,7 @@ int main(int argc, char **argv) {
 		assert(fitTrack.checkConsistency());
 
 		// do the fit
-		fitter->setDebugLvl(1);
+		//fitter->setDebugLvl(1);
 		fitter->processTrack(&fitTrack);
 
 		//check
@@ -305,7 +334,9 @@ int main(int argc, char **argv) {
 		if (!fitTrack.getFitStatus(rep)->isFitConverged()) {
 			std::cout
 					<< "Track could not be fitted successfully! Fit is not converged! \n";
-			//continue;
+			if((fabs(reco_ad_px) < 100))
+				std::cout<<"IMPORTANT: Not reco'ed by GenFit: "<<ientry<<"\n";
+			continue;
 		}
 
 
@@ -358,23 +389,37 @@ int main(int argc, char **argv) {
 		huPu->Fill((state[3] - referenceState[3]) / sqrt(cov[3][3]));
 		hvPu->Fill((state[4] - referenceState[4]) / sqrt(cov[4][4]));
 
-		hmomresolution->Fill(1./true_p,true_p*sqrt(cov[0][0]));
-
 
 		//kfsop.Print();
 
 		TVector3 reco_mom = kfsop.getMom();
 
 //		double reco_p  = kfsop.getMom().Mag();
-//		double reco_px = kfsop.getMom().Px();
-//		double reco_py = kfsop.getMom().Py();
-//		double reco_pz = kfsop.getMom().Pz();
+//		double reco_ad_px = kfsop.getMom().Px();
+//		double reco_ad_py = kfsop.getMom().Py();
+//		double reco_ad_pz = kfsop.getMom().Pz();
 //		double reco_pT = kfsop.getMom().Pt();
+
+
+		TVector3 reco_ad_mom(reco_ad_px,reco_ad_py,reco_ad_pz);
+
+		hpT_residual_vs_pT->Fill(init_mom.Pt(),(reco_mom.Pt() - init_mom.Pt())/init_mom.Pt());
+		hADpT_residual_vs_pT->Fill(init_mom.Pt(),(reco_ad_mom.Pt() - init_mom.Pt())/init_mom.Pt());
+
 
 		hpx_residual->Fill(reco_mom.Px() - init_mom.Px());
 		hpy_residual->Fill(reco_mom.Py() - init_mom.Py());
 		hpz_residual->Fill(reco_mom.Pz() - init_mom.Pz());
+
+		hpT_residual->Fill(reco_mom.Pt() - init_mom.Pt());
 		hptot_residual->Fill(reco_mom.Mag() - init_mom.Mag());
+
+		hpT_diff->Fill(reco_mom.Pt()- reco_ad_mom.Pt());
+
+		if(!(fabs(reco_ad_px) < 100))
+			std::cout<<"IMPORTANT: Not reco'd by AD: "<<ientry<<"\n";
+
+		hpT_resolution_vs_diff->Fill(reco_mom.Pt()- reco_ad_mom.Pt(),reco_mom.Mag() - init_mom.Mag());
 
 
 	}    // end loop over events
@@ -448,18 +493,34 @@ int main(int argc, char **argv) {
 	c2->Write();
 
 	TCanvas *c3 = new TCanvas("c3","c3");
-	c3->cd();
-	hmomresolution->Draw();
+	c3->Divide(2,2);
+	c3->cd(1);
+	hpT_residual_vs_pT->Draw("colz");
+	c3->cd(2);
+	hpT_residual_vs_pT->FitSlicesY();
+	TH1D *hpT_resolution_vs_pT = (TH1D*)gDirectory->Get("hpT_residual_vs_pT_2");
+	hpT_resolution_vs_pT->SetMarkerStyle(20);
+	hpT_resolution_vs_pT->Draw("e");
+	c3->cd(3);
+	hADpT_residual_vs_pT->Draw("colz");
+	c3->cd(4);
+	hADpT_residual_vs_pT->FitSlicesY();
+	TH1D *hADpT_resolution_vs_pT = (TH1D*)gDirectory->Get("hADpT_residual_vs_pT_2");
+	hADpT_resolution_vs_pT->SetMarkerStyle(20);
+	hADpT_resolution_vs_pT->Draw("e");
 	c3->Update();
 
 	TCanvas *c4 = new TCanvas("c4","c4");
 	c4->Divide(2,2);
 	c4->cd(1);
-	hpx_residual->Draw();
+	//hpx_residual->Draw();
+	hpT_diff->Draw();
 	c4->cd(2);
-	hpy_residual->Draw();
+	hpT_residual->Draw();
 	c4->cd(3);
-	hpz_residual->Draw();
+	//hpz_residual->Draw();
+	hpT_resolution_vs_diff->Draw("colz");
+	hpT_resolution_vs_diff->ProfileX()->Draw("same");
 	c4->cd(4);
 	hptot_residual->Draw();
 

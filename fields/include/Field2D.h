@@ -50,6 +50,8 @@ class Field2D : public AbsBField {
 
   bool initialize(std::string inname = "");
 
+  bool re_scale(double r);
+
   void plot(std::string option = "");
 
   //! return value at position

@@ -41,6 +41,14 @@
 
 namespace genfit {
 
+bool Field2D::re_scale(double r)
+{
+	field_map_r_->Scale(r);
+	field_map_z_->Scale(r);
+
+	return true;
+}
+
 bool Field2D::initialize(std::string inname) {
 
 
