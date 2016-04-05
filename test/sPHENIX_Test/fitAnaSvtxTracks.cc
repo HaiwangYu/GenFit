@@ -29,8 +29,8 @@
 #include "PlanarMeasurement.h"
 #include "DetPlane.h"
 #include "SharedPlanePtr.h"
-#include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
+//#include <boost/shared_ptr.hpp>
+//#include <boost/make_shared.hpp>
 #include <KalmanFittedStateOnPlane.h>
 //#include <AbsKalmanFitter.h>
 //#include <KalmanFitter.h>
@@ -97,7 +97,8 @@ int main(int argc, char **argv) {
 	genfit::AbsKalmanFitter* fitter = new genfit::KalmanFitterRefTrack();
 
 	TFile *fout = TFile::Open("results.root","recreate");
-	fout->cd();
+	TTree *Tout = new TTree("T","Test GenFit2");
+	//fout->cd();
 
 	TH1D *hmomRes = new TH1D("hmomRes", "mom residual", 500,
 			-200 * resolution_detector_xy * momentum_initial / nMeasurements,
@@ -157,30 +158,53 @@ int main(int argc, char **argv) {
 	Float_t Cluster_z[NLAYERS];
 	Float_t Cluster_size_dphi[NLAYERS];
 	Float_t Cluster_size_dz[NLAYERS];
-	Float_t true_px;
-	Float_t true_py;
-	Float_t true_pz;
+	Float_t True_px;
+	Float_t True_py;
+	Float_t True_pz;
 	Float_t AlanDion_px;
 	Float_t AlanDion_py;
 	Float_t AlanDion_pz;
+	Float_t AlanDion_dca2d;
 	Int_t nhits;
 
 	T->SetBranchAddress("nhits", &nhits);
-	T->SetBranchAddress("gpx", &true_px);
-	T->SetBranchAddress("gpy", &true_py);
-	T->SetBranchAddress("gpz", &true_pz);
+	T->SetBranchAddress("gpx", &True_px);
+	T->SetBranchAddress("gpy", &True_py);
+	T->SetBranchAddress("gpz", &True_pz);
 	T->SetBranchAddress("px", &AlanDion_px);
 	T->SetBranchAddress("py", &AlanDion_py);
 	T->SetBranchAddress("pz", &AlanDion_pz);
+	T->SetBranchAddress("dca2d", &AlanDion_dca2d);
 	T->SetBranchAddress("x", Cluster_x);
 	T->SetBranchAddress("y", Cluster_y);
 	T->SetBranchAddress("z", Cluster_z);
 	T->SetBranchAddress("size_dphi", Cluster_size_dphi);
 	T->SetBranchAddress("size_dz", Cluster_size_dz);
 
+	Float_t GenFit_px;
+	Float_t GenFit_py;
+	Float_t GenFit_pz;
+	Float_t GenFit_dca2d;
+	Float_t GenFit_chi2_ndf;
+
+	Tout->Branch("GenFit_px",&GenFit_px,"GenFit_px/F");
+	Tout->Branch("GenFit_py",&GenFit_py,"GenFit_py/F");
+	Tout->Branch("GenFit_pz",&GenFit_pz,"GenFit_pz/F");
+	Tout->Branch("GenFit_dca2d",&GenFit_dca2d,"GenFit_dca2d/F");
+	Tout->Branch("GenFit_chi2_ndf",&GenFit_chi2_ndf,"GenFit_chi2_ndf/F");
+
+	Tout->Branch("AlanDion_px",&AlanDion_px,"AlanDion_px/F");
+	Tout->Branch("AlanDion_py",&AlanDion_py,"AlanDion_py/F");
+	Tout->Branch("AlanDion_pz",&AlanDion_pz,"AlanDion_pz/F");
+	Tout->Branch("AlanDion_dca2d",&AlanDion_dca2d,"AlanDion_dca2d/F");
+	Tout->Branch("True_px",&True_px,"True_px/F");
+	Tout->Branch("True_py",&True_py,"True_py/F");
+	Tout->Branch("True_pz",&True_pz,"True_pz/F");
+
+
 	// main loop
 	for (unsigned int ientry = 0; ientry < T->GetEntries(); ++ientry) {
-	//for (unsigned int ientry = 0; ientry < 1000; ++ientry) {
+	//for (unsigned int ientry = 0; ientry < 100000; ++ientry) {
 		//T->GetEntry(atoi(argv[1]));
 		T->GetEntry(ientry);
 
@@ -192,30 +216,30 @@ int main(int argc, char **argv) {
 
 		// true start values
 		TVector3 init_pos(0, 0, 0); //cm
-		TVector3 true_mom(true_px, true_py, true_pz);
+		TVector3 True_mom(True_px, True_py, True_pz);
 
 		const int pdg = -13; //-13: mu+, 13: mu-
 		const double charge =
 				TDatabasePDG::Instance()->GetParticle(pdg)->Charge() / (3.);
 
 		// Seed: use smeared values
-		const bool smearPosMom = true; // init the Reps with smeared init_pos and true_mom
+		const bool smearPosMom = true; // init the Reps with smeared init_pos and True_mom
 		const double posSmear = 10 * resolution_detector_xy;     // cm
 		const double momSmear = 3. / 180. * TMath::Pi();     // rad
 		const double momMagSmear = 0.1;   // relative
 
 		TVector3 seed_pos(init_pos);
-		TVector3 seed_mom(true_mom);
+		TVector3 seed_mom(True_mom);
 		if (smearPosMom) {
 			seed_pos.SetX(gRandom->Gaus(seed_pos.X(), posSmear));
 			seed_pos.SetY(gRandom->Gaus(seed_pos.Y(), posSmear));
 			seed_pos.SetZ(gRandom->Gaus(seed_pos.Z(), posSmear));
 
-			seed_mom.SetPhi(gRandom->Gaus(true_mom.Phi(), momSmear));
-			seed_mom.SetTheta(gRandom->Gaus(true_mom.Theta(), momSmear));
+			seed_mom.SetPhi(gRandom->Gaus(True_mom.Phi(), momSmear));
+			seed_mom.SetTheta(gRandom->Gaus(True_mom.Theta(), momSmear));
 			seed_mom.SetMag(
-					gRandom->Gaus(true_mom.Mag(),
-							momMagSmear * true_mom.Mag()));
+					gRandom->Gaus(True_mom.Mag(),
+							momMagSmear * True_mom.Mag()));
 		}
 
 		// approximate covariance
@@ -241,7 +265,7 @@ int main(int argc, char **argv) {
 		const genfit::StateOnPlane seedSoP(seedMSoP);
 
 		genfit::MeasuredStateOnPlane initMSoP(measurementCreatorRep);
-		initMSoP.setPosMomCov(init_pos, true_mom, seed_cov);
+		initMSoP.setPosMomCov(init_pos, True_mom, seed_cov);
 		const genfit::StateOnPlane initSoP(initMSoP);
 
 		// create track
@@ -258,8 +282,10 @@ int main(int argc, char **argv) {
 
 		genfit::MeasuredStateOnPlane currentState = seedMSoP;
 
-		genfit::SharedPlanePtr destPlane = boost::make_shared<genfit::DetPlane>(
-				TVector3(0, 0, dest_z), TVector3(0, 0, 1));
+//		genfit::SharedPlanePtr destPlane = boost::make_shared<genfit::DetPlane>(
+//				TVector3(0, 0, dest_z), TVector3(0, 0, 1));
+		genfit::SharedPlanePtr destPlane(new genfit::DetPlane(
+				TVector3(0, 0, dest_z), TVector3(0, 0, 1)));
 
 		int measurementCounter_ = 0;
 		// create smeared measurements and add to track
@@ -289,8 +315,8 @@ int main(int argc, char **argv) {
 				hitCov(0, 0) = Cluster_size_dphi[ilayer]*Cluster_size_dphi[ilayer]/12.;
 				hitCov(1, 1) = Cluster_size_dz[ilayer]*Cluster_size_dz[ilayer]/12.;
 
-				LogDEBUG;
-				plane->Print();
+//				LogDEBUG;
+//				plane->Print();
 
 				genfit::AbsMeasurement* measurement =
 						new genfit::PlanarMeasurement(hitCoords, hitCov, -1,
@@ -376,8 +402,7 @@ int main(int argc, char **argv) {
 		TVectorD state = kfsop.getState();
 		TMatrixDSym cov = kfsop.getCov();
 
-		hmomRes->Fill((charge / state[0] - true_mom.Mag())/true_mom.Mag());
-		//hmomRes->Fill((state[0] - 1./true_mom.Mag()));
+		hmomRes->Fill((charge / state[0] - True_mom.Mag())/True_mom.Mag());
 		hupRes->Fill((state[1] - referenceState[1]));
 		hvpRes->Fill((state[2] - referenceState[2]));
 		huRes->Fill((state[3] - referenceState[3]));
@@ -396,27 +421,35 @@ int main(int argc, char **argv) {
 
 		TVector3 AlanDion_mom(AlanDion_px,AlanDion_py,AlanDion_pz);
 
-		hpT_residual_vs_pT->Fill(true_mom.Pt(),(GenFit_mom.Pt() - true_mom.Pt())/true_mom.Pt());
-		hADpT_residual_vs_pT->Fill(true_mom.Pt(),(AlanDion_mom.Pt() - true_mom.Pt())/true_mom.Pt());
+		hpT_residual_vs_pT->Fill(True_mom.Pt(),(GenFit_mom.Pt() - True_mom.Pt())/True_mom.Pt());
+		hADpT_residual_vs_pT->Fill(True_mom.Pt(),(AlanDion_mom.Pt() - True_mom.Pt())/True_mom.Pt());
 
 
-		hpx_residual->Fill(GenFit_mom.Px() - true_mom.Px());
-		hpy_residual->Fill(GenFit_mom.Py() - true_mom.Py());
-		hpz_residual->Fill(GenFit_mom.Pz() - true_mom.Pz());
+		hpx_residual->Fill(GenFit_mom.Px() - True_mom.Px());
+		hpy_residual->Fill(GenFit_mom.Py() - True_mom.Py());
+		hpz_residual->Fill(GenFit_mom.Pz() - True_mom.Pz());
 
-		hpT_residual->Fill(GenFit_mom.Pt() - true_mom.Pt());
-		hptot_residual->Fill(GenFit_mom.Mag() - true_mom.Mag());
+		hpT_residual->Fill(GenFit_mom.Pt() - True_mom.Pt());
+		hptot_residual->Fill(GenFit_mom.Mag() - True_mom.Mag());
 
 		hpT_diff->Fill(GenFit_mom.Pt()- AlanDion_mom.Pt());
 
 		if(!(fabs(AlanDion_px) < 100))
 			std::cout<<"IMPORTANT: Not reco'd by AD: "<<ientry<<"\n";
 
-		hpT_resolution_vs_diff->Fill(GenFit_mom.Pt()- AlanDion_mom.Pt(),GenFit_mom.Mag() - true_mom.Mag());
+		hpT_resolution_vs_diff->Fill(GenFit_mom.Pt()- AlanDion_mom.Pt(),GenFit_mom.Mag() - True_mom.Mag());
 
 
+		GenFit_px = GenFit_mom.Px();
+		GenFit_py = GenFit_mom.Py();
+		GenFit_pz = GenFit_mom.Pz();
+		GenFit_chi2_ndf = chi2 / ndf;
+		GenFit_dca2d = state[3]; //u
+		Tout->Fill();
 	}    // end loop over events
-	fPHG4Hits->Close();
+
+	fout->cd();
+	Tout->Write();
 
 
 	gStyle->SetOptFit();
@@ -526,6 +559,15 @@ int main(int argc, char **argv) {
 	hptot_residual->Draw();
 
 	c4->Update();
+
+	fout->cd();
+	c1->Write();
+	c2->Write();
+	c3->Write();
+	c4->Write();
+
+	fout->Close();
+	fPHG4Hits->Close();
 
 
 	delete fitter;
