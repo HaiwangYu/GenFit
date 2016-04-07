@@ -161,6 +161,9 @@ int main(int argc, char **argv) {
 	Float_t True_px;
 	Float_t True_py;
 	Float_t True_pz;
+	Float_t True_vx;
+	Float_t True_vy;
+	Float_t True_vz;
 	Float_t AlanDion_px;
 	Float_t AlanDion_py;
 	Float_t AlanDion_pz;
@@ -171,6 +174,9 @@ int main(int argc, char **argv) {
 	T->SetBranchAddress("gpx", &True_px);
 	T->SetBranchAddress("gpy", &True_py);
 	T->SetBranchAddress("gpz", &True_pz);
+	T->SetBranchAddress("gvx", &True_vx);
+	T->SetBranchAddress("gvy", &True_vy);
+	T->SetBranchAddress("gvz", &True_vz);
 	T->SetBranchAddress("px", &AlanDion_px);
 	T->SetBranchAddress("py", &AlanDion_py);
 	T->SetBranchAddress("pz", &AlanDion_pz);
@@ -187,24 +193,40 @@ int main(int argc, char **argv) {
 	Float_t GenFit_dca2d;
 	Float_t GenFit_chi2_ndf;
 
+	TVector3 GenFit_State_BeamLine_O;
+	TVector3 GenFit_State_BeamLine_U;
+	TVector3 GenFit_State_BeamLine_V;
+	TVectorD GeFit_State_BeamLine(5);
+	TMatrixDSym GenFit_Cov_BeamLine(5);
+
 	Tout->Branch("GenFit_px",&GenFit_px,"GenFit_px/F");
 	Tout->Branch("GenFit_py",&GenFit_py,"GenFit_py/F");
 	Tout->Branch("GenFit_pz",&GenFit_pz,"GenFit_pz/F");
 	Tout->Branch("GenFit_dca2d",&GenFit_dca2d,"GenFit_dca2d/F");
 	Tout->Branch("GenFit_chi2_ndf",&GenFit_chi2_ndf,"GenFit_chi2_ndf/F");
+	Tout->Branch("GenFit_State_BeamLine_O",&GenFit_State_BeamLine_O);
+	Tout->Branch("GenFit_State_BeamLine_U",&GenFit_State_BeamLine_U);
+	Tout->Branch("GenFit_State_BeamLine_V",&GenFit_State_BeamLine_V);
+	Tout->Branch("GeFit_State_BeamLine",&GeFit_State_BeamLine);
+	Tout->Branch("GenFit_Cov_BeamLine",&GenFit_Cov_BeamLine);
 
 	Tout->Branch("AlanDion_px",&AlanDion_px,"AlanDion_px/F");
 	Tout->Branch("AlanDion_py",&AlanDion_py,"AlanDion_py/F");
 	Tout->Branch("AlanDion_pz",&AlanDion_pz,"AlanDion_pz/F");
 	Tout->Branch("AlanDion_dca2d",&AlanDion_dca2d,"AlanDion_dca2d/F");
+
 	Tout->Branch("True_px",&True_px,"True_px/F");
 	Tout->Branch("True_py",&True_py,"True_py/F");
 	Tout->Branch("True_pz",&True_pz,"True_pz/F");
 
+	Tout->Branch("True_vx",&True_vx,"True_vx/F");
+	Tout->Branch("True_vy",&True_vy,"True_vy/F");
+	Tout->Branch("True_vz",&True_vz,"True_vz/F");
+
 
 	// main loop
-	for (unsigned int ientry = 0; ientry < T->GetEntries(); ++ientry) {
-	//for (unsigned int ientry = 0; ientry < 100000; ++ientry) {
+	//for (unsigned int ientry = 0; ientry < T->GetEntries(); ++ientry) {
+	for (unsigned int ientry = 0; ientry < 10; ++ientry) {
 		//T->GetEntry(atoi(argv[1]));
 		T->GetEntry(ientry);
 
@@ -401,6 +423,15 @@ int main(int argc, char **argv) {
 		TVectorD referenceState = initSoP.getState();
 		TVectorD state = kfsop.getState();
 		TMatrixDSym cov = kfsop.getCov();
+		LogDEBUG;
+		GeFit_State_BeamLine = state;
+		LogDEBUG;
+		GenFit_Cov_BeamLine = cov;
+		LogDEBUG;
+		GenFit_State_BeamLine_O = kfsop.getPlane()->getO();
+		GenFit_State_BeamLine_U = kfsop.getPlane()->getU();
+		GenFit_State_BeamLine_V = kfsop.getPlane()->getV();
+		LogDEBUG;
 
 		hmomRes->Fill((charge / state[0] - True_mom.Mag())/True_mom.Mag());
 		hupRes->Fill((state[1] - referenceState[1]));
@@ -445,6 +476,7 @@ int main(int argc, char **argv) {
 		GenFit_pz = GenFit_mom.Pz();
 		GenFit_chi2_ndf = chi2 / ndf;
 		GenFit_dca2d = state[3]; //u
+
 		Tout->Fill();
 	}    // end loop over events
 
