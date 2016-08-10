@@ -388,6 +388,7 @@ ADD_GENFIT_TEST( matEffectTest     			test/sPHENIX_Test/matEffectTest.cc)
 ADD_GENFIT_TEST( zPlaneFitterTest     		test/sPHENIX_Test/zPlaneFitterTest.cc)
 ADD_GENFIT_TEST( fitPHG4Hits               	test/sPHENIX_Test/fitPHG4Hits.cc)
 ADD_GENFIT_TEST( fitAnaSvtxTracks               	test/sPHENIX_Test/fitAnaSvtxTracks.cc)
+ADD_GENFIT_TEST( rejectOutlier               	test/sPHENIX_Test/rejectOutlier.cc)
 
 # generate and install following configuration files
 #GENERATE_PACKAGE_CONFIGURATION_FILES( genfitConfig.cmake genfitConfigVersion.cmake )
