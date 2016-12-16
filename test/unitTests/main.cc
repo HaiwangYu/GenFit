@@ -68,7 +68,6 @@ enum e_testStatus {
   kException
 };
 
-
 void handler(int sig) {
   void *array[10];
   size_t size;
@@ -153,7 +152,7 @@ e_testStatus isCovMatrix(TMatrixTBase<double>& cov) {
 
   for (int i=0; i<cov.GetNrows(); ++i) {
     for (int j=0; j<cov.GetNcols(); ++j) {
-       if (isnan(cov(i,j))) {
+       if (std::isnan(cov(i,j))) {
          std::cout << "isCovMatrix: element isnan\n";
          return kFailed;
        }
@@ -1030,7 +1029,7 @@ e_testStatus checkExtrapolateBy(bool writeHisto = false) {
 //=====================================================================================================================
 
 struct TestCase {
-  TestCase(std::string name, e_testStatus(*function_)(bool)) : name_(name), function_(function_), nPassed_(0), nFailed_(0), nException_(0) {;}
+  TestCase(std::string name, e_testStatus(*function)(bool)) : name_(name), function_(function), nPassed_(0), nFailed_(0), nException_(0) {;}
   void Print() {std::cout << name_ << " \t" << nPassed_ << " \t" << nFailed_ << " \t" << nException_ << "\n";}
 
   std::string name_;
@@ -1063,8 +1062,6 @@ int main() {
 
   TDatabasePDG::Instance()->GetParticle(211);
 
-
-  unsigned int nFailed(0);
   const unsigned int nTests(1000);
 
   std::vector<TestCase> testCases;
