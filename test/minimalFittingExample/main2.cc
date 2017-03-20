@@ -35,7 +35,7 @@ int main() {
 
 
   // init event display
-  genfit::EventDisplay* display = genfit::EventDisplay::getInstance();
+  //genfit::EventDisplay* display = genfit::EventDisplay::getInstance();
 
 
   // init fitter
@@ -102,13 +102,13 @@ int main() {
   assert(fitTrack.checkConsistency());
 
 
-  display->addEvent(&fitTrack);
+  //display->addEvent(&fitTrack);
 
 
   delete fitter;
 
   // open event display
-  display->open();
+  //display->open();
 
 }
 
