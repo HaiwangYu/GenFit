@@ -4,8 +4,8 @@ if(POLICY CMP0042)
    cmake_policy(SET CMP0042 NEW) # Mac OS -rpath behavior
 endif(POLICY CMP0042)
 
-set(CMAKE_C_COMPILER   "/cvmfs/fermilab.opensciencegrid.org/products/larsoft/gcc/v4_9_3/Linux64bit+2.6-2.12/bin/gcc")
-set(CMAKE_CXX_COMPILER "/cvmfs/fermilab.opensciencegrid.org/products/larsoft/gcc/v4_9_3/Linux64bit+2.6-2.12/bin/g++")
+#set(CMAKE_C_COMPILER   "/cvmfs/fermilab.opensciencegrid.org/products/larsoft/gcc/v4_9_3/Linux64bit+2.6-2.12/bin/gcc")
+#set(CMAKE_CXX_COMPILER "/cvmfs/fermilab.opensciencegrid.org/products/larsoft/gcc/v4_9_3/Linux64bit+2.6-2.12/bin/g++")
 
 # declare the project name
 PROJECT(genfit2)
@@ -113,7 +113,7 @@ ENDIF(NOT CMAKE_BUILD_TYPE)
 #SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} --coverage")
 
 include(CheckCXXCompilerFlag)
-SET(CPP_STANDARD c++03)
+SET(CPP_STANDARD c++11)
 # ROOT 6 requires C++11 support, enforced via headers
 IF (ROOT_found_version GREATER 59900)
     SET(CPP_STANDARD c++11)
