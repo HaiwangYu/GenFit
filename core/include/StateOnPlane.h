@@ -51,6 +51,7 @@ class StateOnPlane {
   //! state is defined by the TrackReps parameterization
   StateOnPlane(const TVectorD& state, const SharedPlanePtr& plane, const AbsTrackRep* rep);
   StateOnPlane(const TVectorD& state, const SharedPlanePtr& plane, const AbsTrackRep* rep, const TVectorD& auxInfo);
+  StateOnPlane(const StateOnPlane& from);
 
   StateOnPlane& operator=(StateOnPlane other);
   void swap(StateOnPlane& other); // nothrow
@@ -172,6 +173,14 @@ inline StateOnPlane::StateOnPlane(const TVectorD& state, const SharedPlanePtr& p
   assert(sharedPlane_.get() != NULL);
 }
 
+
+inline StateOnPlane::StateOnPlane (const StateOnPlane& from) :
+		state_(from.state_),
+		auxInfo_(from.auxInfo_),
+		sharedPlane_(from.sharedPlane_),
+		rep_(from.rep_)
+		{}
+
 inline StateOnPlane& StateOnPlane::operator=(StateOnPlane other) {
   swap(other);
   return *this;
@@ -185,6 +194,7 @@ inline void StateOnPlane::swap(StateOnPlane& other) {
   this->sharedPlane_.swap(other.sharedPlane_);
   std::swap(this->rep_, other.rep_);
 }
+
 
 } /* End of namespace genfit */
 /** @} */
