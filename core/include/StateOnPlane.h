@@ -51,7 +51,7 @@ class StateOnPlane {
   //! state is defined by the TrackReps parameterization
   StateOnPlane(const TVectorD& state, const SharedPlanePtr& plane, const AbsTrackRep* rep);
   StateOnPlane(const TVectorD& state, const SharedPlanePtr& plane, const AbsTrackRep* rep, const TVectorD& auxInfo);
-  StateOnPlane(const StateOnPlane& from);
+  //StateOnPlane(const StateOnPlane& from);
 
   StateOnPlane& operator=(StateOnPlane other);
   void swap(StateOnPlane& other); // nothrow
@@ -174,12 +174,12 @@ inline StateOnPlane::StateOnPlane(const TVectorD& state, const SharedPlanePtr& p
 }
 
 
-inline StateOnPlane::StateOnPlane (const StateOnPlane& from) :
-		state_(from.state_),
-		auxInfo_(from.auxInfo_),
-		sharedPlane_(from.sharedPlane_),
-		rep_(from.rep_)
-		{}
+//inline StateOnPlane::StateOnPlane (const StateOnPlane& from) :
+//		state_(from.state_),
+//		auxInfo_(from.auxInfo_),
+//		sharedPlane_(from.sharedPlane_),
+//		rep_(from.rep_)
+//		{}
 
 inline StateOnPlane& StateOnPlane::operator=(StateOnPlane other) {
   swap(other);
