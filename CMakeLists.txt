@@ -4,6 +4,9 @@ if(POLICY CMP0042)
    cmake_policy(SET CMP0042 NEW) # Mac OS -rpath behavior
 endif(POLICY CMP0042)
 
+set(CMAKE_C_COMPILER   "/cvmfs/fermilab.opensciencegrid.org/products/larsoft/gcc/v4_9_3/Linux64bit+2.6-2.12/bin/gcc")
+set(CMAKE_CXX_COMPILER "/cvmfs/fermilab.opensciencegrid.org/products/larsoft/gcc/v4_9_3/Linux64bit+2.6-2.12/bin/g++")
+
 # declare the project name
 PROJECT(genfit2)
 
@@ -16,10 +19,10 @@ SET( ${PROJECT_NAME}_VERSION_PATCH 0 )
 # cmake -DLIBRARY_OUTPUT_DIRECTORY:PATH=.... -DINCLUDE_OUTPUT_DIRECTORY:PATH=....
 # otherwise, set default install destinations
 IF(NOT DEFINED LIBRARY_OUTPUT_DIRECTORY)
-	set( LIBRARY_OUTPUT_DIRECTORY ./lib )
+	set( LIBRARY_OUTPUT_DIRECTORY $ENV{OFFLINE_MAIN}/lib )
 ENDIF()
 IF(NOT DEFINED INCLUDE_OUTPUT_DIRECTORY)
-	set( INCLUDE_OUTPUT_DIRECTORY ./include )
+	set( INCLUDE_OUTPUT_DIRECTORY $ENV{OFFLINE_MAIN}/include/GenFit )
 ENDIF()
 
 # define path to macros and settings
