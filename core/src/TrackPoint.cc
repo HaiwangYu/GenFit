@@ -26,6 +26,8 @@
 
 #include <TBuffer.h>
 
+#include <algorithm>
+
 namespace genfit {
 
 TrackPoint::TrackPoint() :
