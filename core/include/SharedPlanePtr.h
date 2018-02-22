@@ -27,7 +27,8 @@
 #include "DetPlane.h"
 
 #ifndef __CINT__
-#include <boost/shared_ptr.hpp>
+//#include <boost/shared_ptr.hpp>
+#include <memory>
 #endif
 
 
@@ -40,7 +41,8 @@ namespace genfit {
  * The DetPlane will automatically be deleted, if no owner remains.
  */
 #ifndef __CINT__
-typedef boost::shared_ptr< genfit::DetPlane > SharedPlanePtr;
+//typedef boost::shared_ptr< genfit::DetPlane > SharedPlanePtr;
+typedef std::shared_ptr< genfit::DetPlane > SharedPlanePtr;
 #else
 class SharedPlanePtr;
 #endif
